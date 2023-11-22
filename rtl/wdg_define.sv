@@ -13,40 +13,40 @@
 
 /* register mapping
  * WDG_CTRL:
- * BITS:   | 31:2 | 1  | 0    |
- * FIELDS: | RES  | EN | OVIE |
- * PERMS:  | NONE | RW | RW   |
- * ----------------------------
+ * BITS:   | 31:3 | 2  | 1   | 0    |
+ * FIELDS: | RES  | EN | ETR | OVIE |
+ * PERMS:  | NONE | RW | RW  | RW   |
+ * ----------------------------------
  * WDG_PSCR:
  * BITS:   | 31:20 | 19:0 |
  * FIELDS: | RES   | PSCR |
  * PERMS:  | NONE  | W    |
- * ----------------------------
+ * ----------------------------------
  * WDG_CNT:
  * BITS:   | 31:0 |
  * FIELDS: | CNT  |
  * PERMS:  | none |
- * ----------------------------
+ * ----------------------------------
  * WDG_CMP:
  * BITS:   | 31:0 |
  * FIELDS: | CMP  |
  * PERMS:  | RW   |
- * ----------------------------
+ * ----------------------------------
  * WDG_STAT:
  * BITS:   | 31:1  | 0    |
  * FIELDS: | RES   | OVIF |
  * PERMS:  | NONE  | R    |
- * ----------------------------
+ * ----------------------------------
  * WDG_KEY:
  * BITS:   | 31:0 |
  * FIELDS: | KEY  |
  * PERMS:  | RW   |
- * ----------------------------
+ * ----------------------------------
  * WDG_FEED:
  * BITS:   | 31:1 | 0    |
  * FIELDS: | RES  | FEED |
  * PERMS:  | NONE | RW   |
- * ----------------------------
+ * ----------------------------------
 */
 
 // verilog_format: off
@@ -66,7 +66,7 @@
 `define WDG_KEY_ADDR  {26'b0, `WDG_KEY , 2'b00}
 `define WDG_FEED_ADDR {26'b0, `WDG_FEED, 2'b00}
 
-`define WDG_CTRL_WIDTH 2
+`define WDG_CTRL_WIDTH 3
 `define WDG_PSCR_WIDTH 20
 `define WDG_CNT_WIDTH  32
 `define WDG_CMP_WIDTH  32

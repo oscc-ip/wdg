@@ -25,7 +25,7 @@ module apb4_wdg (
   logic [`WDG_CMP_WIDTH-1:0] s_wdg_cmp_d, s_wdg_cmp_q;
   logic [`WDG_STAT_WIDTH-1:0] s_wdg_stat_d, s_wdg_stat_q;
   logic [`WDG_KEY_WIDTH-1:0] s_wdg_key_d, s_wdg_key_q;
-  logic s_valid, s_done, s_tc_clk;
+  logic s_valid, s_done, s_inclk, s_tc_clk;
   logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_normal_mode, s_wdg_irq_trg;
   logic s_irq_d, s_irq_q, s_ov_irq, s_key_match, s_wdg_feed_d, s_wdg_feed_q;
 
@@ -35,7 +35,8 @@ module apb4_wdg (
   assign apb4.pready     = 1'b1;
   assign apb4.pslverr    = 1'b0;
 
-  assign s_normal_mode   = s_wdg_ctrl_q[1] & s_done;
+  assign s_tc_clk        = s_wdg_ctrl_q[1] ? wdg.rtc_clk_i : s_inclk;  // TODO: glitch-free switch
+  assign s_normal_mode   = s_wdg_ctrl_q[2] & s_done;
   assign s_ov_irq        = s_wdg_ctrl_q[0] & s_wdg_stat_q[0];
   assign s_key_match     = s_wdg_key_q == 32'h5F37_59DF;
   assign wdg.rst_o       = s_irq_q;
@@ -74,7 +75,7 @@ module apb4_wdg (
       .div_valid_i(s_valid),
       .div_ready_o(),
       .div_done_o (s_done),
-      .clk_o      (s_tc_clk)
+      .clk_o      (s_inclk)
   );
 
   always_comb begin
