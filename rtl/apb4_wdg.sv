@@ -10,6 +10,7 @@
 
 `include "register.sv"
 `include "clk_int_div.sv"
+`include "cdc_sync.sv"
 `include "wdg_define.sv"
 
 module apb4_wdg (
@@ -25,8 +26,8 @@ module apb4_wdg (
   logic [`WDG_STAT_WIDTH-1:0] s_wdg_stat_d, s_wdg_stat_q;
   logic [`WDG_KEY_WIDTH-1:0] s_wdg_key_d, s_wdg_key_q;
   logic s_valid, s_done, s_tc_clk;
-  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_normal_mode;
-  logic s_irq_d, s_irq_q, s_ov_irq, s_key_match;
+  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_normal_mode, s_wdg_irq_trg;
+  logic s_irq_d, s_irq_q, s_ov_irq, s_key_match, s_wdg_feed_d, s_wdg_feed_q;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -54,11 +55,11 @@ module apb4_wdg (
 
   always_comb begin
     s_wdg_pscr_d = s_wdg_pscr_q;
-    if (s_apb4_wr_hdshk && (s_apb4_addr == `WDG_PSCR) && s_key_match) begin
-      s_wdg_pscr_d = apb4.pwdata[`WDG_PSCR_WIDTH-1:0] < `WDG_PSCR_MIN_VAL ? `WDG_PSCR_MIN_VAL : abp4.pwdata[`WDG_PSCR_WIDTH-1:0];
+    if (s_apb4_wr_hdshk && s_apb4_addr == `WDG_PSCR && s_key_match) begin
+      s_wdg_pscr_d = apb4.pwdata[`WDG_PSCR_WIDTH-1:0] < `WDG_PSCR_MIN_VAL ? `WDG_PSCR_MIN_VAL : apb4.pwdata[`WDG_PSCR_WIDTH-1:0];
     end
   end
-  dffr #(`WDG_PSCR_WIDTH) u_wdg_pscr_dffr (
+  dffrc #(`WDG_PSCR_WIDTH, `WDG_PSCR_MIN_VAL) u_wdg_pscr_dffrc (
       .clk_i  (apb4.pclk),
       .rst_n_i(apb4.presetn),
       .dat_i  (s_wdg_pscr_d),
@@ -79,7 +80,9 @@ module apb4_wdg (
   always_comb begin
     s_wdg_cnt_d = s_wdg_cnt_q;
     if (s_normal_mode) begin
-      if (s_wdg_cnt_q == s_wdg_cmp_q) begin
+      if (s_wdg_feed_q) begin
+        s_wdg_cnt_d = '0;
+      end else if (s_wdg_cnt_q >= s_wdg_cmp_q) begin
         s_wdg_cnt_d = '0;
       end else begin
         s_wdg_cnt_d = s_wdg_cnt_q + 1'b1;
@@ -102,6 +105,28 @@ module apb4_wdg (
       s_wdg_cmp_q
   );
 
+  cdc_sync #(2, 1) u_irq_cdc_sync (
+      apb4.pclk,
+      apb4.presetn,
+      s_wdg_cnt_q >= s_wdg_cmp_q,
+      s_wdg_irq_trg
+  );
+
+  always_comb begin
+    s_wdg_stat_d = s_wdg_stat_q;
+    if (s_irq_q && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
+      s_wdg_stat_d = '0;
+    end else if (s_wdg_irq_trg) begin
+      s_wdg_stat_d = '1;
+    end
+  end
+  dffr #(`WDG_STAT_WIDTH) u_wdg_stat_dffr (
+      apb4.pclk,
+      apb4.presetn,
+      s_wdg_stat_d,
+      s_wdg_stat_q
+  );
+
   always_comb begin
     s_wdg_key_d = s_wdg_key_q;
     if (s_apb4_wr_hdshk) begin
@@ -119,18 +144,12 @@ module apb4_wdg (
       s_wdg_key_q
   );
 
-  cdc_sync #(2, 1) u_irq_cdc_sync (
+  assign s_wdg_feed_d = (s_apb4_wr_hdshk && s_apb4_addr == `WDG_FEED && s_key_match) ? apb4.pwdata[`WDG_FEED_WIDTH-1:0] : s_wdg_feed_q;
+  dffr #(`WDG_FEED_WIDTH) u_wdg_feed_dffr (
       apb4.pclk,
       apb4.presetn,
-      s_wdg_cnt_q >= s_wdg_cmp_q,
-      s_wdg_stat_d[0]
-  );
-
-  dffr #(`WDG_STAT_WIDTH) u_wdg_stat_dffr (
-      apb4.pclk,
-      apb4.presetn,
-      s_wdg_stat_d,
-      s_wdg_stat_q
+      s_wdg_feed_d,
+      s_wdg_feed_q
   );
 
   always_comb begin
@@ -156,10 +175,11 @@ module apb4_wdg (
         `WDG_PSCR: apb4.prdata[`WDG_PSCR_WIDTH-1:0] = s_wdg_pscr_q;
         `WDG_CMP:  apb4.prdata[`WDG_CMP_WIDTH-1:0] = s_wdg_cmp_q;
         `WDG_STAT: apb4.prdata[`WDG_STAT_WIDTH-1:0] = s_wdg_stat_q;
+        `WDG_KEY:  apb4.prdata[`WDG_KEY_WIDTH-1:0] = s_wdg_key_q;
+        `WDG_FEED: apb4.prdata[`WDG_FEED_WIDTH-1:0] = s_wdg_feed_q;
         default:   apb4.prdata = '0;
       endcase
     end
   end
 
 endmodule
-

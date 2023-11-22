@@ -42,6 +42,11 @@
  * FIELDS: | KEY  |
  * PERMS:  | RW   |
  * ----------------------------
+ * WDG_FEED:
+ * BITS:   | 31:1 | 0    |
+ * FIELDS: | RES  | FEED |
+ * PERMS:  | NONE | RW   |
+ * ----------------------------
 */
 
 // verilog_format: off
@@ -51,6 +56,7 @@
 `define WDG_CMP  4'b0011 // BASEADDR + 0x0C
 `define WDG_STAT 4'b0100 // BASEADDR + 0x10
 `define WDG_KEY  4'b0101 // BASEADDR + 0x14
+`define WDG_FEED 4'b0110 // BASEADDR + 0x18
 
 `define WDG_CTRL_ADDR {26'b0, `WDG_CTRL, 2'b00}
 `define WDG_PSCR_ADDR {26'b0, `WDG_PSCR, 2'b00}
@@ -58,6 +64,7 @@
 `define WDG_CMP_ADDR  {26'b0, `WDG_CMP , 2'b00}
 `define WDG_STAT_ADDR {26'b0, `WDG_STAT, 2'b00}
 `define WDG_KEY_ADDR  {26'b0, `WDG_KEY , 2'b00}
+`define WDG_FEED_ADDR {26'b0, `WDG_FEED, 2'b00}
 
 `define WDG_CTRL_WIDTH 2
 `define WDG_PSCR_WIDTH 20
@@ -65,6 +72,7 @@
 `define WDG_CMP_WIDTH  32
 `define WDG_STAT_WIDTH 1
 `define WDG_KEY_WIDTH  32
+`define WDG_FEED_WIDTH 1
 
 `define WDG_PSCR_MIN_VAL  {{(`WDG_PSCR_WIDTH-2){1'b0}}, 2'd2}
 // verilog_format: on
