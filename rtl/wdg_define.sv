@@ -20,7 +20,7 @@
  * WDG_PSCR:
  * BITS:   | 31:20 | 19:0 |
  * FIELDS: | RES   | PSCR |
- * PERMS:  | NONE  | W    |
+ * PERMS:  | NONE  | RW   |
  * ----------------------------------
  * WDG_CNT:
  * BITS:   | 31:0 |
@@ -74,7 +74,7 @@
 `define WDG_KEY_WIDTH  32
 `define WDG_FEED_WIDTH 1
 
-`define WDG_PSCR_MIN_VAL  {{(`WDG_PSCR_WIDTH-2){1'b0}}, 2'd2}
+`define WDG_PSCR_MIN_VAL {{(`WDG_PSCR_WIDTH-2){1'b0}}, 2'd2}
 // verilog_format: on
 
 interface wdg_if (

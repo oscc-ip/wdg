@@ -45,7 +45,7 @@ task automatic WDGTest::test_reset_reg();
   this.rd_check(`WDG_CTRL_ADDR, "CTRL REG", 32'b0 & {`WDG_CTRL_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   this.rd_check(`WDG_PSCR_ADDR, "PSCR REG", 32'd2 & {`WDG_PSCR_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   this.rd_check(`WDG_CMP_ADDR, "CMP REG", 32'b0 & {`WDG_CMP_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`WDG_STAT_ADDR, "STAT REG", 32'b1 & {`WDG_STAT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
+  this.rd_check(`WDG_STAT_ADDR, "STAT REG", 32'b0 & {`WDG_STAT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   this.rd_check(`WDG_KEY_ADDR, "KEY REG", 32'b0 & {`WDG_KEY_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   // verilog_format: on
 endtask

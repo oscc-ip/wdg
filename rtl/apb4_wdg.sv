@@ -26,8 +26,8 @@ module apb4_wdg (
   logic [`WDG_STAT_WIDTH-1:0] s_wdg_stat_d, s_wdg_stat_q;
   logic [`WDG_KEY_WIDTH-1:0] s_wdg_key_d, s_wdg_key_q;
   logic s_valid, s_done, s_inclk, s_tc_clk;
-  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_normal_mode, s_wdg_irq_trg;
-  logic s_irq_d, s_irq_q, s_ov_irq, s_key_match, s_wdg_feed_d, s_wdg_feed_q;
+  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_normal_mode;
+  logic s_ov_en, s_ov_irq_trg, s_key_match, s_wdg_feed_d, s_wdg_feed_q;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -35,11 +35,12 @@ module apb4_wdg (
   assign apb4.pready     = 1'b1;
   assign apb4.pslverr    = 1'b0;
 
-  assign s_tc_clk        = s_wdg_ctrl_q[1] ? wdg.rtc_clk_i : s_inclk;  // TODO: glitch-free switch
+  // TODO: glitch-free switch
+  assign s_tc_clk        = s_wdg_ctrl_q[1] ? wdg.rtc_clk_i : s_inclk;
   assign s_normal_mode   = s_wdg_ctrl_q[2] & s_done;
-  assign s_ov_irq        = s_wdg_ctrl_q[0] & s_wdg_stat_q[0];
+  assign s_ov_en         = s_wdg_ctrl_q[0];
   assign s_key_match     = s_wdg_key_q == 32'h5F37_59DF;
-  assign wdg.rst_o       = s_irq_q;
+  assign wdg.rst_o       = s_wdg_stat_q[0];
 
   always_comb begin
     s_wdg_ctrl_d = s_wdg_ctrl_q;
@@ -110,14 +111,14 @@ module apb4_wdg (
       apb4.pclk,
       apb4.presetn,
       s_wdg_cnt_q >= s_wdg_cmp_q,
-      s_wdg_irq_trg
+      s_ov_irq_trg
   );
 
   always_comb begin
     s_wdg_stat_d = s_wdg_stat_q;
-    if (s_irq_q && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
+    if (s_wdg_stat_q[0] && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
       s_wdg_stat_d = '0;
-    end else if (s_wdg_irq_trg) begin
+    end else if (~s_wdg_stat_q[0] && s_ov_en && s_ov_irq_trg) begin
       s_wdg_stat_d = '1;
     end
   end
@@ -151,21 +152,6 @@ module apb4_wdg (
       apb4.presetn,
       s_wdg_feed_d,
       s_wdg_feed_q
-  );
-
-  always_comb begin
-    s_irq_d = s_irq_q;
-    if (~s_irq_q && s_ov_irq) begin
-      s_irq_d = 1'b1;
-    end else if (s_irq_q && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
-      s_irq_d = 1'b0;
-    end
-  end
-  dffr #(1) u_irq_dffr (
-      apb4.pclk,
-      apb4.presetn,
-      s_irq_d,
-      s_irq_q
   );
 
   always_comb begin
