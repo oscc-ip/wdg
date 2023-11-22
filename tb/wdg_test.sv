@@ -25,6 +25,7 @@ class WDGTest extends APB4Master;
   extern task automatic test_reset_reg();
   extern task automatic test_wr_rd_reg(input bit [31:0] run_times = 1000);
   extern task automatic test_clk_div(input bit [31:0] run_times = 10);
+  extern task automatic test_rtc_clk();
   extern task automatic test_inc_cnt(input bit [31:0] run_times = 10);
   extern task automatic test_irq(input bit [31:0] run_times = 1000);
 endclass
@@ -90,6 +91,14 @@ task automatic WDGTest::test_clk_div(input bit [31:0] run_times = 10);
   end
 endtask
 
+task automatic WDGTest::test_rtc_clk();
+  $display("=== [test wdg rtc clk] ===");
+  this.write(`WDG_KEY_ADDR, this.magic_num);
+  this.write(`WDG_CTRL_ADDR, 32'b010 & {`WDG_CTRL_WIDTH{1'b1}});
+  $display("%t", $time);
+  repeat (200) @(posedge this.apb4.pclk);
+endtask
+
 task automatic WDGTest::test_inc_cnt(input bit [31:0] run_times = 10);
   $display("=== [test wdg inc cnt] ===");
   this.write(`WDG_KEY_ADDR, this.magic_num);
@@ -102,7 +111,7 @@ task automatic WDGTest::test_inc_cnt(input bit [31:0] run_times = 10);
   this.write(`WDG_CMP_ADDR, 32'hF & {`WDG_CMP_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_CTRL_ADDR, 32'b10 & {`WDG_CTRL_WIDTH{1'b1}});
+  this.write(`WDG_CTRL_ADDR, 32'b100 & {`WDG_CTRL_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
   this.write(`WDG_FEED_ADDR, 32'b1 & {`WDG_FEED_WIDTH{1'b1}});
@@ -127,7 +136,7 @@ task automatic WDGTest::test_irq(input bit [31:0] run_times = 1000);
   this.write(`WDG_CMP_ADDR, 32'hF & {`WDG_CMP_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_CTRL_ADDR, 32'b11 & {`WDG_CTRL_WIDTH{1'b1}});
+  this.write(`WDG_CTRL_ADDR, 32'b101 & {`WDG_CTRL_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
   this.write(`WDG_FEED_ADDR, 32'b1 & {`WDG_FEED_WIDTH{1'b1}});
@@ -137,11 +146,11 @@ task automatic WDGTest::test_irq(input bit [31:0] run_times = 1000);
   repeat (200) @(posedge this.apb4.pclk);
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_CTRL_ADDR, 32'b10 & {`WDG_CTRL_WIDTH{1'b1}});
+  this.write(`WDG_CTRL_ADDR, 32'b100 & {`WDG_CTRL_WIDTH{1'b1}});
   this.read(`WDG_STAT_ADDR);
   $display("super.rd_data: %h", super.rd_data);
   repeat (200) @(posedge this.apb4.pclk);
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_CTRL_ADDR, 32'b11 & {`WDG_CTRL_WIDTH{1'b1}});
+  this.write(`WDG_CTRL_ADDR, 32'b101 & {`WDG_CTRL_WIDTH{1'b1}});
 endtask
 `endif

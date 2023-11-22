@@ -40,6 +40,7 @@ program automatic test_top (
     wdg_hdl.test_reset_reg();
     wdg_hdl.test_wr_rd_reg();
     wdg_hdl.test_clk_div();
+    wdg_hdl.test_rtc_clk();
     wdg_hdl.test_inc_cnt();
     wdg_hdl.test_irq();
 
