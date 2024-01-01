@@ -121,19 +121,22 @@ module apb4_wdg (
       s_wdg_cmp_q
   );
 
-  cdc_sync #(2, 1) u_irq_cdc_sync (
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_irq_cdc_sync (
       apb4.pclk,
       apb4.presetn,
       s_wdg_cnt_q >= s_wdg_cmp_q - 1,
       s_ov_irq_trg
   );
 
-  assign s_wdg_stat_en = (s_bit_ovif && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) || (~s_bit_ovif && s_bit_ovie && s_ov_irq_trg);
+  assign s_wdg_stat_en = (s_bit_ovif && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) || (~s_bit_ovif && s_bit_en && s_bit_ovie && s_ov_irq_trg);
   always_comb begin
     s_wdg_stat_d = s_wdg_stat_q;
     if (s_bit_ovif && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
       s_wdg_stat_d = '0;
-    end else if (~s_bit_ovif && s_bit_ovie && s_ov_irq_trg) begin
+    end else if (~s_bit_ovif && s_bit_en && s_bit_ovie && s_ov_irq_trg) begin
       s_wdg_stat_d = '1;
     end
   end
