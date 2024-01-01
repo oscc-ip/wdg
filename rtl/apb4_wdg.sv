@@ -19,15 +19,24 @@ module apb4_wdg (
 );
 
   logic [3:0] s_apb4_addr;
+  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
   logic [`WDG_CTRL_WIDTH-1:0] s_wdg_ctrl_d, s_wdg_ctrl_q;
+  logic s_wdg_ctrl_en;
   logic [`WDG_PSCR_WIDTH-1:0] s_wdg_pscr_d, s_wdg_pscr_q;
+  logic s_wdg_pscr_en;
   logic [`WDG_CNT_WIDTH-1:0] s_wdg_cnt_d, s_wdg_cnt_q;
+  logic s_wdg_cnt_en;
   logic [`WDG_CMP_WIDTH-1:0] s_wdg_cmp_d, s_wdg_cmp_q;
+  logic s_wdg_cmp_en;
   logic [`WDG_STAT_WIDTH-1:0] s_wdg_stat_d, s_wdg_stat_q;
+  logic s_wdg_stat_en;
   logic [`WDG_KEY_WIDTH-1:0] s_wdg_key_d, s_wdg_key_q;
-  logic s_valid, s_done, s_inclk, s_tc_clk;
-  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_normal_mode;
-  logic s_ov_en, s_ov_irq_trg, s_key_match, s_wdg_feed_d, s_wdg_feed_q;
+  logic s_wdg_key_en;
+  logic [`WDG_FEED_WIDTH-1:0] s_wdg_feed_d, s_wdg_feed_q;
+  logic s_wdg_feed_en;
+  logic s_valid, s_done, s_inclk, s_tc_clk, s_normal_mode;
+  logic s_bit_ovie, s_bit_etr, s_bit_en, s_bit_ovif;
+  logic s_ov_irq_trg, s_key_match;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -35,37 +44,38 @@ module apb4_wdg (
   assign apb4.pready     = 1'b1;
   assign apb4.pslverr    = 1'b0;
 
-  // TODO: glitch-free switch
-  assign s_tc_clk        = s_wdg_ctrl_q[1] ? wdg.rtc_clk_i : s_inclk;
-  assign s_normal_mode   = s_wdg_ctrl_q[2] & s_done;
-  assign s_ov_en         = s_wdg_ctrl_q[0];
+  assign s_bit_ovie      = s_wdg_ctrl_q[0];
+  assign s_bit_etr       = s_wdg_ctrl_q[1];
+  assign s_bit_en        = s_wdg_ctrl_q[2];
+  assign s_bit_ovif      = s_wdg_stat_q[0];
+  assign s_tc_clk        = s_bit_etr ? wdg.rtc_clk_i : s_inclk;  // TODO: glitch-free switch
+  assign s_normal_mode   = s_bit_en & s_done;
   assign s_key_match     = s_wdg_key_q == 32'h5F37_59DF;
-  assign wdg.rst_o       = s_wdg_stat_q[0];
+  assign wdg.rst_o       = s_bit_ovif;
 
-  always_comb begin
-    s_wdg_ctrl_d = s_wdg_ctrl_q;
-    if (s_apb4_wr_hdshk && s_apb4_addr == `WDG_CTRL && s_key_match) begin
-      s_wdg_ctrl_d = apb4.pwdata[`WDG_CTRL_WIDTH-1:0];
-    end
-  end
-  dffr #(`WDG_CTRL_WIDTH) u_wdg_ctrl_dffr (
+  assign s_wdg_ctrl_en   = s_apb4_wr_hdshk && s_apb4_addr == `WDG_CTRL && s_key_match;
+  assign s_wdg_ctrl_d    = s_wdg_ctrl_en ? apb4.pwdata[`WDG_CTRL_WIDTH-1:0] : s_wdg_ctrl_q;
+  dffer #(`WDG_CTRL_WIDTH) u_wdg_ctrl_dffer (
       apb4.pclk,
       apb4.presetn,
+      s_wdg_ctrl_en,
       s_wdg_ctrl_d,
       s_wdg_ctrl_q
   );
 
+  assign s_wdg_pscr_en = s_apb4_wr_hdshk && s_apb4_addr == `WDG_PSCR && s_key_match;
   always_comb begin
     s_wdg_pscr_d = s_wdg_pscr_q;
-    if (s_apb4_wr_hdshk && s_apb4_addr == `WDG_PSCR && s_key_match) begin
+    if (s_wdg_pscr_en) begin
       s_wdg_pscr_d = apb4.pwdata[`WDG_PSCR_WIDTH-1:0] < `WDG_PSCR_MIN_VAL ? `WDG_PSCR_MIN_VAL : apb4.pwdata[`WDG_PSCR_WIDTH-1:0];
     end
   end
-  dffrc #(`WDG_PSCR_WIDTH, `WDG_PSCR_MIN_VAL) u_wdg_pscr_dffrc (
-      .clk_i  (apb4.pclk),
-      .rst_n_i(apb4.presetn),
-      .dat_i  (s_wdg_pscr_d),
-      .dat_o  (s_wdg_pscr_q)
+  dfferc #(`WDG_PSCR_WIDTH, `WDG_PSCR_MIN_VAL) u_wdg_pscr_dfferc (
+      apb4.pclk,
+      apb4.presetn,
+      s_wdg_pscr_en,
+      s_wdg_pscr_d,
+      s_wdg_pscr_q
   );
 
   assign s_valid = s_apb4_wr_hdshk && (s_apb4_addr == `WDG_PSCR) && s_key_match && s_done;
@@ -79,30 +89,34 @@ module apb4_wdg (
       .clk_o      (s_inclk)
   );
 
+  assign s_wdg_cnt_en = s_normal_mode;
   always_comb begin
     s_wdg_cnt_d = s_wdg_cnt_q;
     if (s_normal_mode) begin
       if (s_wdg_feed_q) begin
         s_wdg_cnt_d = '0;
-      end else if (s_wdg_cnt_q >= s_wdg_cmp_q) begin
+      end else if (s_wdg_cnt_q >= s_wdg_cmp_q - 1) begin
         s_wdg_cnt_d = '0;
       end else begin
         s_wdg_cnt_d = s_wdg_cnt_q + 1'b1;
       end
     end
   end
-
-  dffr #(`WDG_CNT_WIDTH) u_wdg_cnt_dffr (
+  dffer #(`WDG_CNT_WIDTH) u_wdg_cnt_dffer (
       s_tc_clk,
       apb4.presetn,
+      s_wdg_cnt_en,
       s_wdg_cnt_d,
       s_wdg_cnt_q
   );
 
-  assign s_wdg_cmp_d = (s_apb4_wr_hdshk && s_apb4_addr == `WDG_CMP && s_key_match) ? apb4.pwdata[`WDG_CMP_WIDTH-1:0] : s_wdg_cmp_q;
-  dffr #(`WDG_CMP_WIDTH) u_wdg_cmp_dffr (
+
+  assign s_wdg_cmp_en = s_apb4_wr_hdshk && s_apb4_addr == `WDG_CMP && s_key_match;
+  assign s_wdg_cmp_d  = s_wdg_cmp_en ? apb4.pwdata[`WDG_CMP_WIDTH-1:0] : s_wdg_cmp_q;
+  dffer #(`WDG_CMP_WIDTH) u_wdg_cmp_dffer (
       apb4.pclk,
       apb4.presetn,
+      s_wdg_cmp_en,
       s_wdg_cmp_d,
       s_wdg_cmp_q
   );
@@ -110,25 +124,28 @@ module apb4_wdg (
   cdc_sync #(2, 1) u_irq_cdc_sync (
       apb4.pclk,
       apb4.presetn,
-      s_wdg_cnt_q >= s_wdg_cmp_q,
+      s_wdg_cnt_q >= s_wdg_cmp_q - 1,
       s_ov_irq_trg
   );
 
+  assign s_wdg_stat_en = (s_bit_ovif && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) || (~s_bit_ovif && s_bit_ovie && s_ov_irq_trg);
   always_comb begin
     s_wdg_stat_d = s_wdg_stat_q;
-    if (s_wdg_stat_q[0] && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
+    if (s_bit_ovif && s_apb4_rd_hdshk && s_apb4_addr == `WDG_STAT) begin
       s_wdg_stat_d = '0;
-    end else if (~s_wdg_stat_q[0] && s_ov_en && s_ov_irq_trg) begin
+    end else if (~s_bit_ovif && s_bit_ovie && s_ov_irq_trg) begin
       s_wdg_stat_d = '1;
     end
   end
-  dffr #(`WDG_STAT_WIDTH) u_wdg_stat_dffr (
+  dffer #(`WDG_STAT_WIDTH) u_wdg_stat_dffer (
       apb4.pclk,
       apb4.presetn,
+      s_wdg_stat_en,
       s_wdg_stat_d,
       s_wdg_stat_q
   );
 
+  assign s_wdg_key_en = s_apb4_wr_hdshk;
   always_comb begin
     s_wdg_key_d = s_wdg_key_q;
     if (s_apb4_wr_hdshk) begin
@@ -139,17 +156,20 @@ module apb4_wdg (
       end
     end
   end
-  dffr #(`WDG_KEY_WIDTH) u_wdg_key_dffr (
+  dffer #(`WDG_KEY_WIDTH) u_wdg_key_dffer (
       apb4.pclk,
       apb4.presetn,
+      s_wdg_key_en,
       s_wdg_key_d,
       s_wdg_key_q
   );
 
-  assign s_wdg_feed_d = (s_apb4_wr_hdshk && s_apb4_addr == `WDG_FEED && s_key_match) ? apb4.pwdata[`WDG_FEED_WIDTH-1:0] : s_wdg_feed_q;
-  dffr #(`WDG_FEED_WIDTH) u_wdg_feed_dffr (
+  assign s_wdg_feed_en = s_apb4_wr_hdshk && s_apb4_addr == `WDG_FEED && s_key_match;
+  assign s_wdg_feed_d  = s_wdg_feed_en ? apb4.pwdata[`WDG_FEED_WIDTH-1:0] : s_wdg_feed_q;
+  dffer #(`WDG_FEED_WIDTH) u_wdg_feed_dffer (
       apb4.pclk,
       apb4.presetn,
+      s_wdg_feed_en,
       s_wdg_feed_d,
       s_wdg_feed_q
   );
