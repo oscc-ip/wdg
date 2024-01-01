@@ -147,6 +147,7 @@ task automatic WDGTest::test_irq(input bit [31:0] run_times = 1000);
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
   this.write(`WDG_CTRL_ADDR, 32'b100 & {`WDG_CTRL_WIDTH{1'b1}});
+  wait(this.wdg.rst_o);
   this.read(`WDG_STAT_ADDR);
   $display("super.rd_data: %h", super.rd_data);
   repeat (200) @(posedge this.apb4.pclk);

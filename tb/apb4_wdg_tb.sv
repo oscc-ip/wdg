@@ -13,7 +13,7 @@
 
 module apb4_wdg_tb ();
   localparam CLK_PEROID = 10;
-  localparam RTC_CLK_PEROID = 22; // sim set
+  localparam RTC_CLK_PEROID = 50; // sim set
   logic rst_n_i, clk_i, rtc_clk_i;
 
   initial begin
