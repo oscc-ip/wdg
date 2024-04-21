@@ -54,7 +54,7 @@ module apb4_wdg (
   assign wdg.rst_o       = s_bit_ovif;
 
   assign s_wdg_ctrl_en   = s_apb4_wr_hdshk && s_apb4_addr == `WDG_CTRL && s_key_match;
-  assign s_wdg_ctrl_d    = s_wdg_ctrl_en ? apb4.pwdata[`WDG_CTRL_WIDTH-1:0] : s_wdg_ctrl_q;
+  assign s_wdg_ctrl_d    = apb4.pwdata[`WDG_CTRL_WIDTH-1:0];
   dffer #(`WDG_CTRL_WIDTH) u_wdg_ctrl_dffer (
       apb4.pclk,
       apb4.presetn,
@@ -112,7 +112,7 @@ module apb4_wdg (
 
 
   assign s_wdg_cmp_en = s_apb4_wr_hdshk && s_apb4_addr == `WDG_CMP && s_key_match;
-  assign s_wdg_cmp_d  = s_wdg_cmp_en ? apb4.pwdata[`WDG_CMP_WIDTH-1:0] : s_wdg_cmp_q;
+  assign s_wdg_cmp_d  = apb4.pwdata[`WDG_CMP_WIDTH-1:0];
   dffer #(`WDG_CMP_WIDTH) u_wdg_cmp_dffer (
       apb4.pclk,
       apb4.presetn,
@@ -168,7 +168,7 @@ module apb4_wdg (
   );
 
   assign s_wdg_feed_en = s_apb4_wr_hdshk && s_apb4_addr == `WDG_FEED && s_key_match;
-  assign s_wdg_feed_d  = s_wdg_feed_en ? apb4.pwdata[`WDG_FEED_WIDTH-1:0] : s_wdg_feed_q;
+  assign s_wdg_feed_d  = apb4.pwdata[`WDG_FEED_WIDTH-1:0];
   dffer #(`WDG_FEED_WIDTH) u_wdg_feed_dffer (
       apb4.pclk,
       apb4.presetn,
