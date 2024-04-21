@@ -35,7 +35,7 @@
  * WDG_STAT:
  * BITS:   | 31:1 | 0    |
  * FIELDS: | RES  | OVIF |
- * PERMS:  | NONE | R    |
+ * PERMS:  | NONE | RO   |
  * ----------------------------------
  * WDG_KEY:
  * BITS:   | 31:0 |
