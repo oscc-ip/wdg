@@ -125,19 +125,43 @@ reset value: `0x0000_0000`
 These registers can be accessed by 4-byte aligned read and write. C-like pseudocode initialization operation:
 
 ```c
-uint32_t val;
-val = wdg.SYS // read the sys register
-val = wdg.IDL // read the idl register
-val = wdg.IDH // read the idh register
+wdg.KEY  = 0x5F3759DF
+wdg.CTRL = 0x0
+
+wdg.KEY  = 0x5F3759DF
+wdg.PSCR = PSCR_32_bit
+
+wdg.KEY  = 0x5F3759DF
+wdg.CMP = CMP_32_bit
+
+while(wdg.STAT == 1); // clear irq flag
+
+wdg.KEY  = 0x5F3759DF
+wdg.CTRL.[EN, OVIE] = 1;
+
+wdg.KEY  = 0x5F3759DF
+wdg.FEED = 0x1        // clear counter
+
+wdg.KEY  = 0x5F3759DF
+wdg.FEED = 0x0        // clear counter
 
 ```
-write operation:
+watchdog trigger mode:
 ```c
-uint32_t val = value_to_be_written;
-wdg.SYS = val // write the sys register
-wdg.IDL = val // write the idl register
-wdg.IDH = val // write the idh register
+// polling style
+while(wdg.STAT == 0);
 
+// interrupt style
+wdg_interrupt_handle() {
+    timer.CTRL.OVIE = 0   // disable interrupt
+    STAT_VAL = wdg.STAT   // clear interrupt flag
+    wdg.KEY  = 0x5F3759DF
+    wdg.FEED = 0x1        // clear counter
+    wdg.KEY  = 0x5F3759DF
+    wdg.FEED = 0x0        // exit reset state
+    ...                   // do something
+    wdg.CTRL.OVIE = 1     // enable interrupt
+}
 ```
 
 ### Resoureces
