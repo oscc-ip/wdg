@@ -43,7 +43,7 @@ task automatic WDGTest::test_reset_reg();
   super.test_reset_reg();
   // verilog_format: off
   this.rd_check(`WDG_CTRL_ADDR, "CTRL REG", 32'b0 & {`WDG_CTRL_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`WDG_PSCR_ADDR, "PSCR REG", 32'd2 & {`WDG_PSCR_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
+  this.rd_check(`WDG_PSCR_ADDR, "PSCR REG", 32'b0 & {`WDG_PSCR_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   this.rd_check(`WDG_CMP_ADDR, "CMP REG", 32'b0 & {`WDG_CMP_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   this.rd_check(`WDG_STAT_ADDR, "STAT REG", 32'b0 & {`WDG_STAT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   this.rd_check(`WDG_KEY_ADDR, "KEY REG", 32'b0 & {`WDG_KEY_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
@@ -73,18 +73,15 @@ task automatic WDGTest::test_clk_div(input bit [31:0] run_times = 10);
 
   repeat (200) @(posedge this.apb4.pclk);
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_PSCR_ADDR, 32'd10 & {`WDG_PSCR_WIDTH{1'b1}});
+  this.write(`WDG_PSCR_ADDR, 32'd9 & {`WDG_PSCR_WIDTH{1'b1}});
 
   repeat (200) @(posedge this.apb4.pclk);
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_PSCR_ADDR, 32'd4 & {`WDG_PSCR_WIDTH{1'b1}});
+  this.write(`WDG_PSCR_ADDR, 32'd3 & {`WDG_PSCR_WIDTH{1'b1}});
 
   repeat (200) @(posedge this.apb4.pclk);
   for (int i = 0; i < run_times; i++) begin
     this.wr_val = ($random % 20) & {`WDG_PSCR_WIDTH{1'b1}};
-    if (this.wr_val < 2) this.wr_val = 2;
-    if (this.wr_val % 2) this.wr_val -= 1;
-
     this.write(`WDG_KEY_ADDR, this.magic_num);
     this.wr_rd_check(`WDG_PSCR_ADDR, "PSCR REG", this.wr_val, Helper::EQUL);
     repeat (200) @(posedge this.apb4.pclk);
@@ -105,7 +102,7 @@ task automatic WDGTest::test_inc_cnt(input bit [31:0] run_times = 10);
   this.write(`WDG_CTRL_ADDR, 32'b0 & {`WDG_CTRL_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_PSCR_ADDR, 32'd4 & {`WDG_PSCR_WIDTH{1'b1}});
+  this.write(`WDG_PSCR_ADDR, 32'd3 & {`WDG_PSCR_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
   this.write(`WDG_CMP_ADDR, 32'hF & {`WDG_CMP_WIDTH{1'b1}});
@@ -130,7 +127,7 @@ task automatic WDGTest::test_irq(input bit [31:0] run_times = 1000);
   this.write(`WDG_CTRL_ADDR, 32'b0 & {`WDG_CTRL_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
-  this.write(`WDG_PSCR_ADDR, 32'd6 & {`WDG_PSCR_WIDTH{1'b1}});
+  this.write(`WDG_PSCR_ADDR, 32'd5 & {`WDG_PSCR_WIDTH{1'b1}});
 
   this.write(`WDG_KEY_ADDR, this.magic_num);
   this.write(`WDG_CMP_ADDR, 32'hF & {`WDG_CMP_WIDTH{1'b1}});
