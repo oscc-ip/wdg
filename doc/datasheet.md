@@ -163,6 +163,7 @@ wdg_interrupt_handle() {
     wdg.CTRL.OVIE = 1     // enable interrupt
 }
 ```
+complete driver and test codes in [driver](../driver/) dir. 
 
 ### Resoureces
 ### References
