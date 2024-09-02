@@ -81,7 +81,8 @@ module apb4_wdg (
       .div_valid_i(s_valid),
       .div_ready_o(),
       .div_done_o (s_done),
-      .clk_trg_o  (s_in_trg)
+      .clk_trg_o  (s_in_trg),
+      .clk_o      ()
   );
 
   assign s_wdg_cnt_en = s_normal_mode && s_tc_trg;
