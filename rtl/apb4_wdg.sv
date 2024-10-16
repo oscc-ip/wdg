@@ -75,15 +75,17 @@ module apb4_wdg (
 
   assign s_valid = s_apb4_wr_hdshk && (s_apb4_addr == `WDG_PSCR) && s_key_match && s_done;
   clk_int_div_simple #(`WDG_PSCR_WIDTH) u_clk_int_div_simple (
-      .clk_i      (apb4.pclk),
-      .rst_n_i    (apb4.presetn),
-      .div_i      (s_wdg_pscr_q),
-      .div_valid_i(s_valid),
-      .div_ready_o(),
-      .div_done_o (s_done),
-      .clk_cnt_o  (),
-      .clk_trg_o  (s_in_trg),
-      .clk_o      ()
+      .clk_i        (apb4.pclk),
+      .rst_n_i      (apb4.presetn),
+      .div_i        (s_wdg_pscr_q),
+      .clk_init_i   (1'b0),
+      .div_valid_i  (s_valid),
+      .div_ready_o  (),
+      .div_done_o   (s_done),
+      .clk_cnt_o    (),
+      .clk_fir_trg_o(),
+      .clk_sec_trg_o(s_in_trg),
+      .clk_o        ()
   );
 
   assign s_wdg_cnt_en = s_normal_mode && s_tc_trg;
